@@ -84,14 +84,6 @@ LedControl::~LedControl() {
     }
 }
 
-void LedControl::begin() {
-    for (int addr = 0; addr < getDeviceCount(); addr++) {
-        shutdown(addr, false);
-        setIntensity(addr, 8);
-        clearDisplay(addr);
-    }
-}
-
 void LedControl::begin(int intensity) {
     for (int addr = 0; addr < getDeviceCount(); addr++) {
         shutdown(addr, false);

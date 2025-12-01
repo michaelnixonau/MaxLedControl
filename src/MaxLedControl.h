@@ -123,18 +123,13 @@ class LedControl : public Adafruit_GFX {
          * @brief Destructor to clean up memory.
          */
         ~LedControl();
-
-        /**
-         * @brief Initialises the display.
-         */
-        void begin();
         
         /**
          * @brief Initialises the display.
          * 
          * @param intensity Initial brightness of the display (0-15).
          */
-        void begin(int intensity);
+        void begin(int intensity = 8);
 
         /**
          * @brief Gets the number of devices attached to this LedControl.
