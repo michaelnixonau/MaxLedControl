@@ -147,11 +147,35 @@ void LedControl::setLed(int addr, int row, int column, boolean state) {
 }
 
 void LedControl::drawPixel(int16_t x, int16_t y, uint16_t color) {
-    if (x < 0 || x >= 8 || y < 0 || y >= 8) {
-        return;  // Out of bounds
+    int16_t t;
+    switch (rotation) {
+        case 1:
+            t = x;
+            x = WIDTH - 1 - y;
+            y = t;
+            break;
+        case 2:
+            x = WIDTH - 1 - x;
+            y = HEIGHT - 1 - y;
+            break;
+        case 3:
+            t = x;
+            x = y;
+            y = HEIGHT - 1 - t;
+            break;
     }
-    // Set or clear the pixel based on the color (non-zero color sets the pixel)
-    setLed(0, y, x, (color > 0));
+
+    // Bounds check against physical dimensions
+    if (x < 0 || x >= WIDTH || y < 0 || y >= HEIGHT) {
+        return; 
+    }
+
+    // Map to specific MAX7219 device
+    // Requires devices to be chained horizontally
+    int device = x / 8;
+    int col = x % 8;
+
+    setLed(device, y, col, (color > 0));
 }
 
 void LedControl::setRow(int addr, int row, byte value) {
