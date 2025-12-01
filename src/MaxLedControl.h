@@ -27,9 +27,8 @@
 #ifndef LedControl_h
 #define LedControl_h
 
-#include <avr/pgmspace.h>
-
 #include <Arduino.h>
+#include <SPI.h>
 #include <Adafruit_GFX.h>
 
 /**
@@ -102,7 +101,7 @@ class LedControl : public Adafruit_GFX {
 
     public:
         /**
-         * @brief Constructor for the LedControl class.
+         * @brief Software SPI Constructor (Bit-Banging).
          * 
          * @param dataPin       Pin where the data gets shifted out.
          * @param clkPin        Pin for the clock.
@@ -110,6 +109,20 @@ class LedControl : public Adafruit_GFX {
          * @param numDevices    Number of devices connected.
          */
         LedControl(int dataPin, int clkPin, int csPin, int numDevices=1);
+
+        /**
+         * @brief Hardware SPI Constructor.
+         * 
+         * @param csPin         Pin for selecting the device.
+         * @param numDevices    Number of devices connected.
+         * @param spiClass      SPIClass object to use (default is &SPI).
+         */
+        LedControl(int csPin, int numDevices=1, SPIClass *spiClass=&SPI);
+
+        /**
+         * @brief Destructor to clean up memory.
+         */
+        ~LedControl();
 
         /**
          * @brief Initialises the display.

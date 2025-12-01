@@ -53,6 +53,37 @@ LedControl::LedControl(int dataPin, int clkPin, int csPin, int numDevices)
     }
 }
 
+LedControl::LedControl(int csPin, int numDevices, SPIClass *spiClass)
+    : Adafruit_GFX(numDevices * 8, 8) {
+    SPI_CS = csPin;
+    maxDevices = (numDevices < 1) ? 1 : numDevices;
+    hardwareSPI = true;
+    spi_bus = spiClass;
+
+    pinMode(SPI_CS, OUTPUT);
+    digitalWrite(SPI_CS, HIGH);
+
+    spi_bus->begin();
+
+    status = new byte[maxDevices * 8];
+    memset(status, 0, maxDevices * 8);
+
+    // Initialise HW to safe state
+    for (int i = 0; i < maxDevices; i++) {
+        spiTransfer(i, OP_DISPLAYTEST, 0);
+        setScanLimit(i, 7);
+        spiTransfer(i, OP_DECODEMODE, 0);
+        clearDisplay(i);
+        shutdown(i, true);
+    }
+}
+
+LedControl::~LedControl() {
+    if (status) {
+        delete[] status;
+    }
+}
+
 void LedControl::begin() {
     for (int addr = 0; addr < getDeviceCount(); addr++) {
         shutdown(addr, false);
@@ -203,20 +234,45 @@ void LedControl::setChar(int addr, int digit, char value, boolean dp) {
 }
 
 void LedControl::spiTransfer(int addr, volatile byte opcode, volatile byte data) {
-    //Create an array with the data to shift out
-    int offset=addr*2;
-    int maxbytes=maxDevices*2;
+    if(addr < 0 || addr >= maxDevices) return;
 
-    for(int i=0;i<maxbytes;i++)
-        spidata[i]=(byte)0;
-    //put our device data into the array
-    spidata[offset+1]=opcode;
-    spidata[offset]=data;
-    //enable the line 
-    digitalWrite(SPI_CS,LOW);
-    //Now shift out the data 
-    for(int i=maxbytes;i>0;i--)
-        shiftOut(SPI_MOSI,SPI_CLK,MSBFIRST,spidata[i-1]);
-    //latch the data onto the display
-    digitalWrite(SPI_CS,HIGH);
+    // MAX7219 max freq is 10MHz. 
+    // We use transaction to coexist with SD cards/Sensors on same bus.
+    if (hardwareSPI) {
+        spi_bus->beginTransaction(SPISettings(10000000, MSBFIRST, SPI_MODE0));
+    }
+    
+    digitalWrite(SPI_CS, LOW);
+
+    // Logic: The MAX7219 works like a shift register chain.
+    // If we have 4 devices, and we want to talk to device #1 (index 1),
+    // we must send data for: Dev 3 (NoOp), Dev 2 (NoOp), Dev 1 (CMD), Dev 0 (NoOp).
+    
+    for(int i = maxDevices - 1; i >= 0; i--) {
+        if (i == addr) {
+            // Send actual command
+            if (hardwareSPI) {
+                spi_bus->transfer(opcode);
+                spi_bus->transfer(data);
+            } else {
+                shiftOut(SPI_MOSI, SPI_CLK, MSBFIRST, opcode);
+                shiftOut(SPI_MOSI, SPI_CLK, MSBFIRST, data);
+            }
+        } else {
+            // Send No-Op to pass through to other chips
+            if (hardwareSPI) {
+                spi_bus->transfer(OP_NOOP);
+                spi_bus->transfer(0);
+            } else {
+                shiftOut(SPI_MOSI, SPI_CLK, MSBFIRST, OP_NOOP);
+                shiftOut(SPI_MOSI, SPI_CLK, MSBFIRST, 0);
+            }
+        }
+    }
+
+    digitalWrite(SPI_CS, HIGH);
+
+    if (hardwareSPI) {
+        spi_bus->endTransaction();
+    }
 }    
