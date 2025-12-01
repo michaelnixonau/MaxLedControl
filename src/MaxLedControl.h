@@ -99,6 +99,17 @@ class LedControl : public Adafruit_GFX {
         /* The maximum number of devices we use */
         int maxDevices;
 
+        /* Flag to reverse bit order for flipped hardware */
+        bool hardwareFlipped;
+
+        /**
+         * @brief Resolves the actual address of the device, considering any hardware flipping.
+         * 
+         * @param addr The logical address.
+         * @return int The resolved physical address.
+         */
+        int resolveAddr(int addr);
+
     public:
         /**
          * @brief Software SPI Constructor (Bit-Banging).
@@ -107,17 +118,19 @@ class LedControl : public Adafruit_GFX {
          * @param clkPin        Pin for the clock.
          * @param csPin         Pin for selecting the device.
          * @param numDevices    Number of devices connected.
+         * @param flipped       Set to true if the display output is horizontally flipped.
          */
-        LedControl(int dataPin, int clkPin, int csPin, int numDevices=1);
+        LedControl(int dataPin, int clkPin, int csPin, int numDevices=1, bool flipped=false);
 
         /**
          * @brief Hardware SPI Constructor.
          * 
          * @param csPin         Pin for selecting the device.
          * @param numDevices    Number of devices connected.
+         * @param flipped       Set to true if the display output is horizontally flipped.
          * @param spiClass      SPIClass object to use (default is &SPI).
          */
-        LedControl(int csPin, int numDevices=1, SPIClass *spiClass=&SPI);
+        LedControl(int csPin, int numDevices=1, bool flipped=false, SPIClass *spiClass=&SPI);
 
         /**
          * @brief Destructor to clean up memory.
