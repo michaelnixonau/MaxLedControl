@@ -84,8 +84,13 @@ class LedControl : public Adafruit_GFX {
         /* Send out a single command to the device */
         void spiTransfer(int addr, byte opcode, byte data);
 
-        /* We keep track of the led-status for all 8 devices in this array */
-        byte status[64];
+        /* Hardware SPI Object (if used) */
+        SPIClass *spi_bus = nullptr;
+        bool hardwareSPI = false;
+
+        /* Buffer for LED status */
+        byte *status;
+
         /* Data is shifted out of this pin*/
         int SPI_MOSI;
         /* The clock is signaled on this pin */

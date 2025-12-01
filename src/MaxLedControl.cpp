@@ -28,29 +28,28 @@
 #include "MaxLedControl.h"
 
 LedControl::LedControl(int dataPin, int clkPin, int csPin, int numDevices)
-    : Adafruit_GFX(numDevices * 8, 8), SPI_MOSI(dataPin), SPI_CLK(clkPin), SPI_CS(csPin), maxDevices(numDevices) {
+    : Adafruit_GFX(numDevices * 8, 8) {
     SPI_MOSI=dataPin;
     SPI_CLK=clkPin;
     SPI_CS=csPin;
-    if(numDevices<=0 || numDevices>8 )
-        numDevices=8;
-    maxDevices=numDevices;
-    pinMode(SPI_MOSI,OUTPUT);
-    pinMode(SPI_CLK,OUTPUT);
-    pinMode(SPI_CS,OUTPUT);
-    digitalWrite(SPI_CS,HIGH);
-    SPI_MOSI=dataPin;
-    for(int i=0;i<64;i++) 
-        status[i]=0x00;
-    for(int i=0;i<maxDevices;i++) {
-        spiTransfer(i,OP_DISPLAYTEST,0);
-        //scanlimit is set to max on startup
-        setScanLimit(i,7);
-        //decode is done in source
-        spiTransfer(i,OP_DECODEMODE,0);
+    maxDevices = (numDevices < 1) ? 1 : numDevices;
+    hardwareSPI = false;
+
+    pinMode(SPI_MOSI, OUTPUT);
+    pinMode(SPI_CLK, OUTPUT);
+    pinMode(SPI_CS, OUTPUT);
+    digitalWrite(SPI_CS, HIGH);
+
+    status = new byte[maxDevices * 8];
+    memset(status, 0, maxDevices * 8);
+
+    // Initialise HW to safe state
+    for (int i = 0; i < maxDevices; i++) {
+        spiTransfer(i, OP_DISPLAYTEST, 0);
+        setScanLimit(i, 7);
+        spiTransfer(i, OP_DECODEMODE, 0);
         clearDisplay(i);
-        //we go into shutdown-mode on startup
-        shutdown(i,true);
+        shutdown(i, true);
     }
 }
 
