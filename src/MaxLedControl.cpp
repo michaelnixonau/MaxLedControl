@@ -240,6 +240,44 @@ void LedControl::setChar(int addr, int digit, char value, boolean dp) {
     spiTransfer(addr, digit+1,v);
 }
 
+void LedControl::scroll(const String &message) {
+    int textX = width();
+    int textY = 0;
+    int textWidth = message.length() * 6;
+
+    setTextWrap(false);
+
+    while (textX + textWidth >= 0) {
+        clear();
+        setCursor(textX, textY);
+        print(message);
+
+        textX--;
+        delay(50);
+    }
+
+    clear();
+}
+
+void LedControl::scroll(const String &message, int frame_delay) {
+    int textX = width();
+    int textY = 0;
+    int textWidth = message.length() * 6;
+
+    setTextWrap(false);
+
+    while (textX + textWidth >= 0) {
+        clear();
+        setCursor(textX, textY);
+        print(message);
+
+        textX--;
+        delay(frame_delay);
+    }
+
+    clear();
+}
+
 void LedControl::spiTransfer(int addr, volatile byte opcode, volatile byte data) {
     if(addr < 0 || addr >= maxDevices) return;
 
